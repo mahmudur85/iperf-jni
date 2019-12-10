@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity(), iPerfImpl.iPerfReporter {
                 try {
                     val streamTemplate = File(applicationContext.getCacheDir(), "iperf3tempXXXXXX")
                     iperf = iPerfImpl(
-                        "aerosphere.stitel.net",
+                        "iperf.scottlinux.com",
                         5201,
                         streamTemplate.path,
                         20,

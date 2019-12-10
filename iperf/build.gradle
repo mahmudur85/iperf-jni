@@ -1,0 +1,131 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+
+        externalNativeBuild {
+            cmake {
+                cFlags "-I./src/ -I${projectDir}"
+                cppFlags "-I./src/ -I${projectDir} -std=c++14 -fexceptions"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+
+    lintOptions {
+        checkReleaseBuilds true
+    }
+
+    aaptOptions {
+        cruncherEnabled = false
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
+        }
+    }
+
+    task swigBuild {
+        exec {
+            workingDir '.'
+            commandLine 'sh', '-c', 'swig -c++ -java -package com.util.iperf -outdir src/main/java/com/util/iperf -o src/main/jni/iperf-jni-wrap.cpp src/main/jni/iperf-jni.i'
+            ignoreExitValue true
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.core:core-ktx:1.1.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}
+
+
+
+def grepFile(file, grepPattern) {
+    def lines = []
+    file.eachLine {
+        line -> if (line.matches(grepPattern)) {
+            lines << line
+        }
+    }
+    return lines
+}
+
+
+
+task generate_iperf_version_string_h() {
+    //
+    // retrive some string constants from configure.ac and
+    // write them to iperf_version.txt
+    //
+
+    def build_gradle_path   =   'iperf/build.gradle'
+    def configure_ac_path   =   'iperf/iperf3/configure.ac'
+    def version_string_h_path = 'iperf/version.h'
+
+    //inputs.files  (configure_ac_path, build_gradle_path)
+    //outputs.files (version_string_h_path)
+
+    doLast {
+        def lines
+        def acinitLine
+        def tokens
+
+        // tokenize AC_INIT(...) to fetch version strings
+        //
+        // macro AC_INIT syntax is:
+        //  AC_INIT (package, version, [bug-report],[tarname], [url])
+
+        lines = grepFile(new File(configure_ac_path), ~/.*AC_INIT.*/)
+        acinitLine = lines[0]
+        tokens = acinitLine.split(/(\(|\)|,[ |\t]*)/)
+
+        new File(version_string_h_path).withWriter { out ->
+
+            out.println     "#define PACKAGE_NAME        \"${tokens[1]}\""
+            out.println     "#define PACKAGE_VERSION     \"${tokens[2]}\""
+            out.println     "#define IPERF_VERSION       \"${tokens[2]}\""
+            out.println     "#define PACKAGE_STRING      \"${tokens[1]} ${tokens[2]}\""
+            if (tokens.length > 3)
+                out.println "#define PACKAGE_BUGREPORT   \"${tokens[3]}\""
+            if (tokens.length > 4)
+                out.println "#define PACKAGE_TARNAME     \"${tokens[4]}\""
+            if (tokens.length > 5)
+                out.println "#define PACKAGE_URL         \"${tokens[5]}\""
+        }
+    }
+}
+
+preBuild.dependsOn generate_iperf_version_string_h

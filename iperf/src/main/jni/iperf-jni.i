@@ -15,6 +15,7 @@ using namespace std;
 #include <stdexcept>
 #include "jni.h"
 
+#ifdef SWIGJAVA
 extern JavaVM *jni_jvm;
 
 static JNIEnv *JNU_GetEnv() {
@@ -26,6 +27,7 @@ static JNIEnv *JNU_GetEnv() {
         throw std::runtime_error("jni version not supported");
     return env;
 }
+#endif
 
 %}
 
@@ -44,24 +46,24 @@ static JNIEnv *JNU_GetEnv() {
 namespace std {
     %template(VecDouble) vector<double>;
 }
+#ifdef SWIGJAVA
+%include "enumtypeunsafe.swg"
+%javaconst(1);
+
+%pragma(java) jniclasscode=%{
+    static {
+        try {
+            System.loadLibrary("iperf-jni");
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("Failed to load native library 'traceroutelib'\n" + e);
+        }
+    }
+%}
+#endif
 
 // Try force Java GC before destroying the lib:
 // - to avoid late destroy of SB objects by GC
 // - to avoid destruction of SB objects from a non-registered GC thread
-#ifdef SWIGJAVA
-%rename(libDestroy_) sb::Endpoint::libDestroy;
-%typemap(javacode) sb::Endpoint %{
-  public void libDestroy(long prmFlags) throws java.lang.Exception {
-	Runtime.getRuntime().gc();
-	libDestroy_(prmFlags);
-  }
-
-  public void libDestroy() throws java.lang.Exception {
-	Runtime.getRuntime().gc();
-	libDestroy_();
-  }
-%}
-#endif
 
 %feature("director");
 

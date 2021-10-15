@@ -1,4 +1,4 @@
-package com.util.iperf3
+package com.synaptictools.iperf3
 
 import org.junit.Test
 

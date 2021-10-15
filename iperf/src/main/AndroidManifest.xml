@@ -1,2 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.util.iperf" />
+    package="com.synaptictools.iperf" >
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

@@ -1,4 +1,4 @@
-package com.util.iperf
+package com.synaptictools.iperf
 
 class iPerfImpl(hostname: String?,
                 port: Int,

@@ -1,11 +1,12 @@
-package com.util.iperf3
+package com.synaptictools.sample
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.widget.Button
 import android.widget.TextView
-import com.util.iperf.*
+import com.synaptictools.iperf.IperfException
+import com.synaptictools.iperf.iPerfImpl
 import java.io.File
 
 class MainActivity : AppCompatActivity(), iPerfImpl.iPerfReporter {

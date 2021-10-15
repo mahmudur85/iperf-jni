@@ -1,4 +1,4 @@
-package com.util.iperf;
+package com.synaptictools.iperf;
 
 /**
  * Created by herman on 6/3/2017.

@@ -1,2 +1,3 @@
-include ':sample', ':iperf'
-rootProject.name='iperf3-android'
+rootProject.name='iperf3 Android'
+include ':sample'
+include ':iperf'

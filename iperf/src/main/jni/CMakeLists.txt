@@ -4,6 +4,7 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+#set(CMAKE_CXX_STANDARD 11)
 set(IPERF_SRC ${CMAKE_SOURCE_DIR}/iperf3)
 
 

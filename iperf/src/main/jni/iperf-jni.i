@@ -1,4 +1,4 @@
-%module(directors = "1") libiperf
+%module(directors = "1") iPerfLib
 
 //
 // Suppress few warnings

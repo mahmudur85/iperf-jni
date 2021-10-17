@@ -22,8 +22,9 @@ android {
 
         externalNativeBuild {
             cmake {
-                cFlags "-I./src/"
-                cppFlags "-I./src/ -std=c++14 -fexceptions"
+                cFlags "-I./src/ -DHAVE_CONFIG_H -UHAVE_STDINT_H -UAF_INET6 -w -Wno-error=format-security -fPIE -pie"
+                cppFlags "-I./src/ -std=c++14 -fexceptions -frtti -DANDROID_STL=c++_shared"
+                arguments "-DANDROID_STL=c++_shared"
             }
         }
     }

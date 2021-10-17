@@ -1,31 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp"
-    tools:context="com.synaptictools.sample.MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Button
-        android:text="Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/button"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentLeft="true" />
+    <data>
+        <variable
+            name="viewModel"
+            type="com.synaptictools.sample.MainViewModel" />
+    </data>
 
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:inputType="textMultiLine"
-        android:ems="10"
-        android:id="@+id/editResult"
-        android:layout_below="@+id/button"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true" />
-</RelativeLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/activity_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        tools:context="com.synaptictools.sample.MainActivity">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/etHostname"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:maxLines="1"
+            android:text="@string/et_label_server_address"
+            android:hint="@string/ed_hint_server_address"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/etPort"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/etPort"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:maxLines="1"
+            android:text="@string/et_label_port"
+            android:hint="@string/ed_hint_port"
+            app:layout_constraintStart_toEndOf="@+id/etHostname"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btRequest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/etHostname"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/start_test"
+            android:enabled="@{!viewModel.IPerfTestRunning}"
+            android:clickable="@{!viewModel.IPerfTestRunning}"/>
+
+        <ScrollView
+            android:id="@+id/result_placeholder"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/btRequest"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvResult"
+                android:text="@{viewModel.IPerfRequestResult}"/>
+
+        </ScrollView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
+

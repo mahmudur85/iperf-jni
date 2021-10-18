@@ -4,8 +4,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+#set(CMAKE_CXX_STANDARD 11)
 set(IPERF_SRC ${CMAKE_SOURCE_DIR}/iperf3)
-set(JNI_SRC ${CMAKE_SOURCE_DIR}/src/main/jni)
 
 
 # check some architecture specific build options
@@ -14,7 +14,7 @@ if ("${ANDROID_ABI}" MATCHES "arm64-v8a|x86_64")
 endif ()
 
 # generate src/iperf_config.h
-configure_file(${CMAKE_SOURCE_DIR}/src/main/assets/iperf_config.h.in ${CMAKE_BINARY_DIR}/src/iperf_config.h)
+configure_file(${CMAKE_SOURCE_DIR}/../assets/iperf_config.h.in ${CMAKE_BINARY_DIR}/src/iperf_config.h)
 
 ###################################
 
@@ -49,7 +49,7 @@ add_library( # build libiperf.so
 add_library(
         iperf-jni SHARED
 
-        ${JNI_SRC}/iperf-jni-wrap.cpp ${JNI_SRC}/iperf-jni.cpp
+        iperf-jni-wrap.cpp iperf-jni.cpp
 )
 
 # Searches for a specified prebuilt library and stores the path as a

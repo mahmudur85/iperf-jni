@@ -1,15 +1,169 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
-    ext.kotlin_version = '1.3.50'
+    ext.kotlin_version = '1.5.31'
+
+    ext {
+        // global variables
+        compile_sdk_version = 29
+        kotlin_version = '1.5.31'
+        min_sdk_version = 21
+        build_tools_version = '30.0.2'
+        gradle_maven_publish_plugin = '0.18.0'
+        dokka_version = '1.5.30'
+
+        // local variables (use def)
+        def androidx_core_kts = '1.6.0'
+        def androidx_test_version = '1.2.0'
+        def annotations_version = '1.1.0'
+        def appcompat_version = '1.3.1'
+        def constraint_layout_version = '2.1.0'
+        def fragment_ktx = '1.1.0'
+        def coroutines_android_version = '1.4.2'
+        def expresso_version = '3.2.0'
+        def glide_version = '4.12.0'
+        def gson_version = '2.8.6'
+        def moshi_version = '1.12.0'
+        def junit_version = '4.12'
+        def android_junit_version = '1.1.3'
+        def lifecycle_version = '2.3.1'
+        def material_version = '1.4.0'
+        def okhttp_version = '4.9.0'
+        def okhttp_logging_interceptor_version = '4.9.0'
+        def okhttp_urlconnection_version = '3.14.9'
+        def retrofit_gson_version = '2.9.0'
+        def retrofit_version = '2.9.0'
+        def room_version = '2.3.0'
+        def truth_version = '1.0'
+        def work_version = '2.2.0'
+        def dagger2_version = '2.37'
+        def mockito_version = '3.6.28'
+        def mockito_kotlin_version = '2.2.0'
+        def okhttpUnit_test_version = '4.9.0'
+        def arch_version = '2.1.0'
+        def nav_version = "2.3.5"
+
+        android_ui_libraries = [
+                // Android UI and appcompat
+                "androidx.appcompat:appcompat:$appcompat_version",
+                "com.google.android.material:material:$material_version",
+                "androidx.constraintlayout:constraintlayout:$constraint_layout_version",
+                "androidx.fragment:fragment-ktx:$fragment_ktx",
+                "androidx.navigation:navigation-fragment-ktx:$nav_version",
+                "androidx.navigation:navigation-ui-ktx:$nav_version"
+        ]
+
+        libraries = [
+                "androidx.core:core-ktx:$androidx_core_kts",
+
+                // Kotlin standard library
+                "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version",
+
+                // Coroutines
+                "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_android_version",
+                "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_android_version",
+
+                //lifecycle
+                "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version",
+                "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version",
+                "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version",
+                "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version",
+
+                // network & serialization
+                "com.squareup.okhttp3:okhttp:$okhttp_version",
+                "com.squareup.okhttp3:logging-interceptor:$okhttp_logging_interceptor_version",
+                "com.squareup.okhttp3:okhttp-urlconnection:$okhttp_urlconnection_version",
+                "com.google.code.gson:gson:$gson_version",
+                "com.squareup.retrofit2:retrofit:$retrofit_version",
+                "com.squareup.retrofit2:converter-moshi:$retrofit_version",
+                "com.squareup.retrofit2:converter-gson:$retrofit_gson_version",
+                // Moshi
+                "com.squareup.moshi:moshi-kotlin:$moshi_version",
+
+                // threading
+                "androidx.annotation:annotation:$annotations_version",
+
+                // DI
+                "com.google.dagger:dagger:$dagger2_version",
+                "com.google.dagger:dagger-android:$dagger2_version",
+                "com.google.dagger:dagger-android-support:$dagger2_version",
+
+                // Room
+                "androidx.room:room-runtime:$room_version",
+
+                // glide
+                "com.github.bumptech.glide:glide:$glide_version",
+        ]
+
+        arch_libraries = [
+                "androidx.work:work-runtime-ktx:$work_version",
+
+                // Room for database
+                "androidx.room:room-ktx:$room_version"
+        ]
+
+        librariesKapt = [
+                // DI
+                "com.google.dagger:dagger-compiler:$dagger2_version",
+                "com.google.dagger:dagger-android-processor:$dagger2_version",
+
+                "androidx.room:room-compiler:$room_version",
+
+                "com.github.bumptech.glide:compiler:$glide_version"
+        ]
+
+        testLibraries = [
+                "junit:junit:$junit_version",
+
+                // Coroutines testing
+                "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_android_version",
+
+                // mocks
+                "org.mockito:mockito-core:$mockito_version",
+                "org.mockito:mockito-inline:$mockito_version",
+                "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockito_kotlin_version",
+
+                //  Architecture Components testing libraries
+                "androidx.arch.core:core-testing:$arch_version",
+
+                "com.google.truth:truth:$truth_version",
+
+                "com.squareup.okhttp3:okhttp:$okhttpUnit_test_version",
+                "com.squareup.okhttp3:mockwebserver:$okhttpUnit_test_version",
+                "com.squareup.okhttp3:logging-interceptor:$okhttpUnit_test_version"
+        ]
+
+        androidTestLibraries = [
+                "androidx.test.ext:junit:$android_junit_version",
+                "androidx.test:runner:$androidx_test_version",
+                "androidx.test:rules:$androidx_test_version",
+
+                // Espresso
+                "androidx.test.espresso:espresso-core:$expresso_version",
+                "androidx.test.espresso:espresso-contrib:$expresso_version",
+                "androidx.test.espresso:espresso-intents:$expresso_version",
+
+                //  Architecture Components testing libraries
+                "androidx.arch.core:core-testing:$arch_version",
+                "androidx.work:work-testing:$work_version",
+        ]
+    }
+
     repositories {
         google()
-        jcenter()
-
+        jcenter() // Warning: this repository is going to shut down soon
+        mavenCentral()
+        plugins.withId("com.vanniktech.maven.publish") {
+            mavenPublish {
+                sonatypeHost = "S01"
+            }
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.2'
+        classpath "com.android.tools.build:gradle:7.0.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+        classpath "com.vanniktech:gradle-maven-publish-plugin:$gradle_maven_publish_plugin"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
+
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -18,8 +172,13 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
-
+        jcenter() // Warning: this repository is going to shut down soon
+        mavenCentral()
+    }
+    plugins.withId("com.vanniktech.maven.publish") {
+        mavenPublish {
+            sonatypeHost = "S01"
+        }
     }
 }
 

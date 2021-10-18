@@ -1,24 +1,30 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'org.jetbrains.dokka'
+    id 'com.vanniktech.maven.publish'
+}
 
+android {
+    compileSdkVersion compile_sdk_version
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 29
+        minSdkVersion min_sdk_version
+        targetSdkVersion compile_sdk_version
+
         versionCode 1
-        versionName "1.0"
+        version = "1.0.0"
+        versionName "$version"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
 
         externalNativeBuild {
             cmake {
-                cFlags "-I./src/ -I${projectDir}"
-                cppFlags "-I./src/ -I${projectDir} -std=c++14 -fexceptions"
+                cFlags "-I./src/ -DHAVE_CONFIG_H -UHAVE_STDINT_H -UAF_INET6 -w -Wno-error=format-security -fPIE -pie"
+                cppFlags "-I./src/ -std=c++14 -fexceptions -frtti -DANDROID_STL=c++_shared"
+                arguments "-DANDROID_STL=c++_shared"
             }
         }
     }
@@ -30,50 +36,62 @@ android {
         }
     }
 
-
-    lintOptions {
-        checkReleaseBuilds true
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    aaptOptions {
-        cruncherEnabled = false
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
 
     externalNativeBuild {
         cmake {
-            path file('CMakeLists.txt')
+            path file('src/main/jni/CMakeLists.txt')
         }
     }
 
     task swigBuild {
         exec {
             workingDir '.'
-            commandLine 'sh', '-c', 'swig -c++ -java -package com.util.iperf -outdir src/main/java/com/util/iperf -o src/main/jni/iperf-jni-wrap.cpp src/main/jni/iperf-jni.i'
+            commandLine 'sh', '-c', 'swig -c++ -java -package com.synaptictools.iperf -outdir src/main/java/com/synaptictools/iperf -o src/main/jni/iperf-jni-wrap.cpp src/main/jni/iperf-jni.i'
             ignoreExitValue true
         }
     }
+}
 
-    externalNativeBuild {
-        cmake {
-            path file('CMakeLists.txt')
-        }
-    }
+task sourcesJar(type: Jar) {
+    group = 'jar'
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
 
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
+    group = 'jar'
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.core:core-ktx:1.1.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation libraries
+    implementation arch_libraries
+    kapt librariesKapt
+    testImplementation testLibraries
+    androidTestImplementation androidTestLibraries
 }
 
-
-
-def grepFile(file, grepPattern) {
+static def grepFile(file, grepPattern) {
     def lines = []
     file.eachLine {
         line -> if (line.matches(grepPattern)) {
@@ -91,12 +109,8 @@ task generate_iperf_version_string_h() {
     // write them to iperf_version.txt
     //
 
-    def build_gradle_path   =   'iperf/build.gradle'
-    def configure_ac_path   =   'iperf/iperf3/configure.ac'
-    def version_string_h_path = 'iperf/version.h'
-
-    //inputs.files  (configure_ac_path, build_gradle_path)
-    //outputs.files (version_string_h_path)
+    def configure_ac_path   =   'iperf/src/main/jni/iperf3/configure.ac'
+    def version_string_h_path = 'iperf/src/main/jni/iperf3/src/version.h'
 
     doLast {
         def lines

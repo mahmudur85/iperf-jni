@@ -2,74 +2,110 @@
 #include <utility>
 #include "iperf-jni.h"
 
-#define IPERF_TAG "IPERF-JNI"
+#define OUTPUT_LENGTH  10240
 
-#define  logd(...)  __android_log_print(ANDROID_LOG_DEBUG, IPERF_TAG, __VA_ARGS__)
-#define  logi(...)  __android_log_print(ANDROID_LOG_INFO, IPERF_TAG, __VA_ARGS__)
-#define  logw(...)  __android_log_print(ANDROID_LOG_WARN, IPERF_TAG, __VA_ARGS__)
+iPerfNative *iPerfNative::_instance = nullptr;
 
 static const char role = 'c';
 
-static int internal_log(const char *format, ...) {
-    int r;
-    va_list args;
-    va_start(args, format);
-    r = __android_log_vprint(ANDROID_LOG_DEBUG, IPERF_TAG, format, args);
-    va_end(args);
-    return r;
+int printf(const char *fmt, ...) {
+    va_list argptr;
+    int cnt;
+    va_start(argptr, fmt);
+    char *buffer = (char *) malloc(OUTPUT_LENGTH);
+    memset(buffer, OUTPUT_LENGTH, 0);
+    cnt = vsnprintf(buffer, OUTPUT_LENGTH, fmt, argptr);
+    buffer[cnt] = '\0';
+    if (iPerfNative::instance().isDebug()) {
+        logi("ifref message(printf): %s", buffer);
+    }
+    iPerfNative::instance().onAppendResult(buffer);
+    free(buffer);
+    va_end(argptr);
+    return cnt;
 }
 
-static void reporter_callback(struct iperf_test *test) {
-    auto *iperf_tester = (iPerf *) test->test_owner;
-    if(iperf_tester->isDebug()) {
-        logi("reporter state: %d", test->state);
+int fprintf(FILE *fp, const char *fmt, ...) {
+    va_list argptr;
+    int cnt;
+    va_start(argptr, fmt);
+    char *buffer = (char *) malloc(OUTPUT_LENGTH);
+    memset(buffer, OUTPUT_LENGTH, 0);
+    cnt = vsnprintf(buffer, OUTPUT_LENGTH, fmt, argptr);
+    buffer[cnt] = '\0';
+    if (iPerfNative::instance().isDebug()) {
+        logi("ifref message(fprintf): %s", buffer);
     }
-    switch (test->state) {
-        case TEST_RUNNING:
-        case STREAM_RUNNING:{
-                /* print interval results for each stream */
-                struct iperf_result result = iperf_intermediate_result(test);
-            iperf_tester->updatedIntermediateResult(result.bandwidth_in_bit);
-        }
-            break;
-        case TEST_END:
-        case DISPLAY_RESULTS:{
-            struct iperf_result result = iperf_intermediate_result(test);
-            iperf_tester->updatedIntermediateResult(result.bandwidth_in_bit);
-            iperf_tester->updateSummaryResult();
-        }
-            break;
-        default:break;
-    }
+    iPerfNative::instance().onAppendResult(buffer);
+    free(buffer);
+    va_end(argptr);
+    return cnt;
 }
 
-iPerf::iPerf(char *hostname, int port, char *streamTemplate, int duration,
-             int interval, bool download) : hostname(hostname), port(port),
-                                          streamTemplate(streamTemplate), duration(duration),
-                                          interval(interval), download(download) {
+int vfprintf(FILE *fp, const char *fmt, va_list args) {
+    int cnt;
+    char *buffer = (char *) malloc(OUTPUT_LENGTH);
+    memset(buffer, OUTPUT_LENGTH, 0);
+    cnt = vsnprintf(buffer, OUTPUT_LENGTH, fmt, args);
+    buffer[cnt] = '\0';
+    if (iPerfNative::instance().isDebug()) {
+        logi("ifref message(vfprintf): %s", buffer);
+    }
+    iPerfNative::instance().onAppendResult(buffer);
+    free(buffer);
+    return cnt;
+}
+
+void perror(const char *msg) {
+    loge("ifref error message(perror): %s", msg);
+}
+
+iPerfNative::iPerfNative() {
+    if (_instance != nullptr) {
+        throw "Instance already exists";
+    }
+    _instance = this;
     this->deInit();
 }
 
-iPerf::~iPerf() {
+
+iPerfNative::~iPerfNative() {
     this->deInit();
+    _instance = nullptr;
 }
 
-void iPerf::deInit() {
+iPerfNative &iPerfNative::instance() {
+    if (_instance == nullptr) {
+        throw "Instance does not exists";
+    }
+    return *_instance;
+}
+
+void iPerfNative::deInit() {
     if (this->test != nullptr) {
         iperf_free_test(this->test);
     }
-    this->results.clear();
 }
 
-void iPerf::init() {
+void iPerfNative::init(char *hostname, int port, char *streamTemplate, int duration,
+                       int interval, bool download, bool useUDP, bool json) {
+    this->hostname = hostname;
+    this->port = port;
+    this->streamTemplate = streamTemplate;
+    this->duration = duration;
+    this->interval = interval;
+    this->download = download;
+    this->useUDP = useUDP;
+    this->json = json;
+
     this->test = iperf_new_test();
-    this->test->test_owner = (void *) this;
-    this->results.clear();
 
     // load defaults
     iperf_defaults(this->test);
 
-    iperf_set_test_json_output(test, 0);
+    iperf_set_test_json_output(test, this->json ? 1 : 0);
+
+    // need this to get the output in local printf
     iperf_set_verbose(test, 1);
 
     // set role as client
@@ -88,86 +124,105 @@ void iPerf::init() {
     iperf_set_test_template(this->test, (char *) this->streamTemplate.c_str());
     iperf_set_test_num_streams(this->test, 1);
 
-    if (this->debug) {
-        this->test->icb.log = internal_log;
+    if(!useUDP) {
+        set_protocol(this->test, Ptcp);
+    }else{
+        set_protocol(this->test, Pudp);
+        test->settings->blksize = 0;
     }
 
-    iperf_set_verbose(test, this->debug? 1:0);
-
-    this->test->reporter_callback = reporter_callback;
+    // optionals: only when debug is on
+    test->get_server_output = this->debug ? 1 : 0;
+    this->test->debug = this->debug ? 1 : 0;
 }
 
-void iPerf::run() {
-    iperf_run_client(this->test);
+static int run(struct iperf_test *test) {
+    int ret = iperf_run_client(test);
+    logd("iperf_run_client() result: %d", ret);
+    return ret;
 }
 
-const char *iPerf::getHostname() {
+int iPerfNative::execute() {
+    onClearResult();
+    if(json){
+        onAppendResult("Accumulating results in JSON format...\n");
+    }
+    auto run_future = std::async(std::launch::async, run, this->test);
+    auto result = run_future.get();
+    logd("finish iperf request, status: %d", result);
+    return result;
+}
+
+const char *iPerfNative::getHostname() {
     return hostname.c_str();
 }
 
-void iPerf::setHostname(char *hostname) {
-    iPerf::hostname = std::string(hostname);
+void iPerfNative::setHostname(char *hostname) {
+    iPerfNative::hostname = std::string(hostname);
 }
 
-int iPerf::getPort() const {
+int iPerfNative::getPort() const {
     return port;
 }
 
-void iPerf::setPort(int port) {
-    iPerf::port = port;
+void iPerfNative::setPort(int port) {
+    iPerfNative::port = port;
 }
 
-const char *iPerf::getStreamTemplate() {
+const char *iPerfNative::getStreamTemplate() {
     return streamTemplate.c_str();
 }
 
-void iPerf::setStreamTemplate(char *streamTemplate) {
-    iPerf::streamTemplate = std::string(streamTemplate);
+void iPerfNative::setStreamTemplate(char *streamTemplate) {
+    iPerfNative::streamTemplate = std::string(streamTemplate);
 }
 
-int iPerf::getDuration() const {
+int iPerfNative::getDuration() const {
     return download;
 }
 
-void iPerf::setDuration(int duration) {
-    iPerf::download = duration;
+void iPerfNative::setDuration(int duration) {
+    iPerfNative::download = duration;
 }
 
-int iPerf::getInterval() const {
+int iPerfNative::getInterval() const {
     return interval;
 }
 
-void iPerf::setInterval(int interval) {
-    iPerf::interval = interval;
+void iPerfNative::setInterval(int interval) {
+    iPerfNative::interval = interval;
 }
 
-bool iPerf::isDebug() const {
+bool iPerfNative::isDebug() const {
     return debug;
 }
 
-void iPerf::setDebug(bool debug) {
-    iPerf::debug = debug;
+void iPerfNative::setDebug(bool debug) {
+    iPerfNative::debug = debug;
 }
 
-bool iPerf::isDownload() const {
+bool iPerfNative::isDownload() const {
     return download;
 }
 
-void iPerf::setDownload(bool download) {
-    iPerf::download = download;
+void iPerfNative::setDownload(bool download) {
+    iPerfNative::download = download;
 }
 
-void iPerf::updatedIntermediateResult(double bits) {
-    this->results.push_back(bits);
-    this->onIntermediateResult(bits, this->download);
+bool iPerfNative::isJson() const {
+    return json;
 }
 
-void iPerf::updateSummaryResult() {
-    double total = 0;
-    for(auto& item: this->results){
-        total+= item;
-    }
-    this->onSummaryResult(total, this->results.size(), this->download);
+void iPerfNative::setJson(bool json) {
+    iPerfNative::json = json;
 }
 
-iPerfResultCallbacks::~iPerfResultCallbacks() = default;
+bool iPerfNative::isUseUDP() const {
+    return useUDP;
+}
+
+void iPerfNative::setUseUDP(bool udp) {
+    iPerfNative::useUDP = udp;
+}
+
+iPerfNativeCallbacks::~iPerfNativeCallbacks() = default;

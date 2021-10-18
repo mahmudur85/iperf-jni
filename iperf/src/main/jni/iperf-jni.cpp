@@ -103,8 +103,9 @@ void iPerfNative::init(char *hostname, int port, char *streamTemplate, int durat
     // load defaults
     iperf_defaults(this->test);
 
-
     iperf_set_test_json_output(test, this->json ? 1 : 0);
+
+    // need this to get the output in local printf
     iperf_set_verbose(test, 1);
 
     // set role as client
@@ -127,11 +128,12 @@ void iPerfNative::init(char *hostname, int port, char *streamTemplate, int durat
         set_protocol(this->test, Ptcp);
     }else{
         set_protocol(this->test, Pudp);
+        test->settings->blksize = 0;
     }
 
-    // need this to get the output in local printf
-    iperf_set_verbose(test, 1);
-    test->get_server_output = 1;
+    // optionals: only when debug is on
+    test->get_server_output = this->debug ? 1 : 0;
+    this->test->debug = this->debug ? 1 : 0;
 }
 
 static int run(struct iperf_test *test) {

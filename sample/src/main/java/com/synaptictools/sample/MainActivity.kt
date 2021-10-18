@@ -38,7 +38,9 @@ class MainActivity : AppCompatActivity() {
                             port = port.toInt(),
                             stream = stream.path,
                             download = true,
-                            json = true
+                            useUDP = false,
+                            json = false,
+                            debug = false
                         ),
                         isAsync = true
                     )

@@ -35,6 +35,7 @@ object IPerf: iPerfNative() {
 
     fun request(config: IPerfConfig): IPerfResult<String> {
         try {
+            isDebug = config.debug
             init(
                 config.hostname,
                 config.port,
